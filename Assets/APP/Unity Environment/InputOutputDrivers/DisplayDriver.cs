@@ -59,7 +59,7 @@ public class DuplicableDisplay : IDisplayTextureSource
             if(currentState != State.DirectCapture)
                 Debug.Log($"Monitor {monitor.id}, name: {monitor.name}, state: {monitor.state}");
 
-            if (monitor.state == uDesktopDuplication.DuplicatorState.Unsupported)
+            if (!monitor.available)
             {
                 var dummy = uWindowCapture.UwcManager.instance;
                 _window = uWindowCapture.UwcManager.Find(monitor.name, false);
@@ -74,7 +74,10 @@ public class DuplicableDisplay : IDisplayTextureSource
                     Debug.Log("Using fallback window capture: " + _window?.id);
                 }
                 else
+                {
                     currentState = State.WaitingOnWindow;
+                    _monitor?.DestroyTexture();
+                }
             }
             else
             {
