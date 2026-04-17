@@ -178,9 +178,12 @@ namespace uDesktopDuplication
             {
                 var monitor = monitors[i];
                 var state = monitor.state;
+
+                // AccessLost would ideally be recoverable via Reinitialize(), but the
+                // bundled native plugin can crash during that path. Leave recovery to
+                // higher-level fallbacks until the native implementation is fixed.
                 if (
                     state == DuplicatorState.NotSet ||
-                    state == DuplicatorState.AccessLost ||
                     state == DuplicatorState.AccessDenied ||
                     state == DuplicatorState.SessionDisconnected ||
                     state == DuplicatorState.Unknown
