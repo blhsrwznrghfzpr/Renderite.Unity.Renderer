@@ -666,6 +666,11 @@ public static class SteamVR_Utils
 		OpenVR.Screenshots.UpdateScreenshotProgress(screenshotHandle, 1.0f);
 
 		// Save textures to disk.
+		// Place files into a monthly subfolder before adding extensions.
+		var now = System.DateTime.Now;
+		previewFilename = GetMonthlyScreenshotPath(previewFilename, now);
+		VRFilename = GetMonthlyScreenshotPath(VRFilename, now);
+
 		// Add extensions
 		previewFilename += ".png";
 		VRFilename += ".png";
@@ -708,5 +713,20 @@ public static class SteamVR_Utils
 
 		Object.DestroyImmediate(previewTexture);
 		Object.DestroyImmediate(texture);
+	}
+
+	private static string GetMonthlyScreenshotPath(string originalPath, System.DateTime timestamp)
+	{
+		if (string.IsNullOrEmpty(originalPath))
+			return originalPath;
+
+		var parentDirectory = Path.GetDirectoryName(originalPath);
+		if (string.IsNullOrEmpty(parentDirectory))
+			parentDirectory = ".";
+
+		var monthDirectory = Path.Combine(parentDirectory, timestamp.ToString("yyyy-MM"));
+		Directory.CreateDirectory(monthDirectory);
+
+		return Path.Combine(monthDirectory, Path.GetFileName(originalPath));
 	}
 }
