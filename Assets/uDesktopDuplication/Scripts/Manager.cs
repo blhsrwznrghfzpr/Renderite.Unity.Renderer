@@ -178,9 +178,13 @@ namespace uDesktopDuplication
             {
                 var monitor = monitors[i];
                 var state = monitor.state;
+
+                // AccessLost would ideally be recoverable via Reinitialize(), but the
+                // bundled native plugin can crash during that path. Let the higher-level
+                // display driver switch away from direct capture until the duplicator
+                // reports a healthy state again.
                 if (
                     state == DuplicatorState.NotSet ||
-                    state == DuplicatorState.AccessLost ||
                     state == DuplicatorState.AccessDenied ||
                     state == DuplicatorState.SessionDisconnected ||
                     state == DuplicatorState.Unknown

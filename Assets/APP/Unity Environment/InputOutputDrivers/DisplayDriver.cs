@@ -41,6 +41,20 @@ public class DuplicableDisplay : IDisplayTextureSource
         state.isPrimary = monitor.isPrimary;
     }
 
+    bool ShouldRefreshCaptureSource(uDesktopDuplication.Monitor monitor)
+    {
+        if (monitor != _monitor)
+            return true;
+
+        if (currentState == State.DirectCapture)
+            return !monitor.available;
+
+        if (currentState == State.UsingWindowCapture)
+            return monitor.available;
+
+        return currentState == State.WaitingOnWindow || currentState == State.WaitingOnTexture;
+    }
+
     public void Update(uDesktopDuplication.Monitor monitor, DisplayState state)
     {
         if (_requests.Count == 0)
@@ -54,12 +68,12 @@ public class DuplicableDisplay : IDisplayTextureSource
 
         bool changed = false;
 
-        if (monitor != _monitor || (currentState != State.DirectCapture && currentState != State.UsingWindowCapture))
+        if (ShouldRefreshCaptureSource(monitor))
         {
             if(currentState != State.DirectCapture)
                 Debug.Log($"Monitor {monitor.id}, name: {monitor.name}, state: {monitor.state}");
 
-            if (monitor.state == uDesktopDuplication.DuplicatorState.Unsupported)
+            if (!monitor.available)
             {
                 var dummy = uWindowCapture.UwcManager.instance;
                 _window = uWindowCapture.UwcManager.Find(monitor.name, false);
@@ -74,7 +88,10 @@ public class DuplicableDisplay : IDisplayTextureSource
                     Debug.Log("Using fallback window capture: " + _window?.id);
                 }
                 else
+                {
                     currentState = State.WaitingOnWindow;
+                    _monitor?.DestroyTexture();
+                }
             }
             else
             {
