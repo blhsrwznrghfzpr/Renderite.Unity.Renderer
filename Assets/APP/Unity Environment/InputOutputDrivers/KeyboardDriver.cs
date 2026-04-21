@@ -70,6 +70,26 @@ public class KeyboardDriver : KeyboardInput
         return length;
     }
 
+    static bool IsIMEEditingKey(Key key)
+    {
+        switch (key)
+        {
+            case Key.LeftArrow:
+            case Key.RightArrow:
+            case Key.UpArrow:
+            case Key.DownArrow:
+            case Key.Backspace:
+            case Key.Delete:
+            case Key.Home:
+            case Key.End:
+            case Key.PageUp:
+            case Key.PageDown:
+                return true;
+            default:
+                return false;
+        }
+    }
+
     bool GetKeyState(Key key)
     {
         // the keycodes are compatible for now
@@ -226,8 +246,13 @@ public class KeyboardDriver : KeyboardInput
         state.heldKeys.Clear();
 
         foreach (var key in _keys)
+        {
+            if (!string.IsNullOrEmpty(imeComposition) && IsIMEEditingKey(key))
+                continue;
+
             if (GetKeyState(key))
                 state.heldKeys.Add(key);
+        }
     }
 
     public override void HandleOutputState(OutputState output)
