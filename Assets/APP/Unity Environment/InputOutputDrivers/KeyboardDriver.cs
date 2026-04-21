@@ -11,20 +11,63 @@ public class KeyboardDriver : KeyboardInput
 {
     StringBuilder typeDelta = new StringBuilder();
 
+    string imeComposition = string.Empty;
+
     IReadOnlyList<Key> _keys;
 
     bool _lastKeyboardActive;
 
     void Start()
     {
-        UnityEngine.InputSystem.Keyboard.current.onTextInput += Current_onTextInput;
+        var keyboard = UnityEngine.InputSystem.Keyboard.current;
+
+        keyboard.onTextInput += Current_onTextInput;
+        keyboard.onIMECompositionChange += Current_onIMECompositionChange;
 
         _keys = Enums.GetValues<Key>();
+    }
+
+    void OnDestroy()
+    {
+        var keyboard = UnityEngine.InputSystem.Keyboard.current;
+
+        if (keyboard == null)
+            return;
+
+        keyboard.onTextInput -= Current_onTextInput;
+        keyboard.onIMECompositionChange -= Current_onIMECompositionChange;
     }
 
     void Current_onTextInput(char obj)
     {
         typeDelta.Append(obj);
+    }
+
+    void Current_onIMECompositionChange(UnityEngine.InputSystem.LowLevel.IMECompositionString composition)
+    {
+        var compositionString = composition.ToString();
+
+        if (compositionString == imeComposition)
+            return;
+
+        var sharedPrefixLength = GetSharedPrefixLength(imeComposition, compositionString);
+
+        for (int i = sharedPrefixLength; i < imeComposition.Length; i++)
+            typeDelta.Append('\b');
+
+        typeDelta.Append(compositionString, sharedPrefixLength, compositionString.Length - sharedPrefixLength);
+        imeComposition = compositionString;
+    }
+
+    static int GetSharedPrefixLength(string first, string second)
+    {
+        var length = Math.Min(first.Length, second.Length);
+
+        for (int i = 0; i < length; i++)
+            if (first[i] != second[i])
+                return i;
+
+        return length;
     }
 
     bool GetKeyState(Key key)
@@ -194,6 +237,9 @@ public class KeyboardDriver : KeyboardInput
             _lastKeyboardActive = output.keyboardInputActive;
 
             Input.imeCompositionMode = _lastKeyboardActive ? IMECompositionMode.On : IMECompositionMode.Off;
+
+            if (!_lastKeyboardActive)
+                imeComposition = string.Empty;
         }
     }
 }
